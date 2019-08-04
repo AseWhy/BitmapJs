@@ -1,0 +1,76 @@
+<html>
+<head>
+	<title>
+		Bitmap worker
+	</title>
+
+	<link rel="stylesheet" href="main.css">
+</head>
+<body>
+	<div id="center">
+		<label for="files">
+			Выберете файлы
+			<input type="file" style="display: none;" id="files" multiple>
+		</label>
+		<!--<p><label class="stris"><input type="checkbox" value="1" name="k"><span></span></label><span class="b_content">Что-то там</span></p>-->
+		<p>
+			<label class="stris">
+				<input type="checkbox">
+				<span></span>
+			</label>
+			<span class="b_content">Нарезать и собрать</span>
+		</p>
+		<div id="on_cut" style="height: 0px;overflow: hidden;">
+			<input type="text" placeholder="Блоков по ширине">
+			<input type="text" placeholder="Блоков по высоте">
+		</div>
+		<p>
+			<label class="stris">
+				<input type="checkbox">
+				<span></span>
+			</label>
+			<span class="b_content">Преобработка изображения</span>
+		</p>
+		<div id="on_post" style="height: 0px;overflow: hidden;">
+			<p>
+				<label class="stris"><input type="checkbox">
+					<span></span>
+				</label>
+				<span class="b_content">Использовать доменантные цвета для стандартных</span>
+			</p>
+			<p>
+				<label class="stris">
+					<input type="checkbox">
+					<span></span>
+				</label>
+				<span class="b_content">Использовать доменантные цвета для заливки</span>
+			</p>
+		</div>
+		<p>
+			<label class="stris">
+				<input type="checkbox">
+				<span></span>
+			</label>
+			<span class="b_content">Оптимизировать (обрезать лишние пиксели)</span>
+		</p>
+		<p><input type="color" value="#ffffff">
+			<text>Цвет заднего фона</text>
+		</p>
+		<label id="logger"></label>
+		<div style="width: 100%;overflow: hidden;">
+			<img src="" alt="" id="doned">
+		</div>
+		<div id="download" style="display: none;">
+			<div style="padding: 5px;color: gray">
+				Скачать
+			</div>
+			<div id="col">
+				<div class="download_s" vol="png">PNG</div>
+				<div class="download_s" vol="jpg">JPG</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="main.js"></script>
+</body>
+</html>
