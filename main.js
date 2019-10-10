@@ -10,6 +10,8 @@ const inputs = document.getElementsByTagName("input"),
       download_s = document.getElementsByClassName("download_s");
 
 var is_read = false,
+    cancel_frame = false,
+    transparent_bg = false,
     is_cancel = false,
     read_img = 0,
     buffer = [],
@@ -48,9 +50,9 @@ inputs[5].oninput = Update;
 
 inputs[6].oninput = function(){
     if(inputs[6].checked){
-        inputs[8].disabled = true;
+        inputs[10].disabled = true;
     }else{
-        inputs[8].disabled = false;
+        inputs[10].disabled = false;
     }
     Update()
 };
@@ -58,7 +60,15 @@ inputs[6].oninput = function(){
 inputs[7].oninput = Update;
 
 inputs[8].oninput = function(){
-    W_FILL_COLOR = inputs[8].value;
+    cancel_frame = inputs[8].checked;
+    Update()
+}
+inputs[9].oninput = function(){
+    transparent_bg = inputs[9].checked;
+    Update()
+}
+inputs[10].oninput = function(){
+    W_FILL_COLOR = inputs[10].value;
     Update();
 }
 
@@ -131,8 +141,8 @@ function rgbToHex(r, g, b) {
  * Processes an image, receives pixel data
  *
  *
- * @param url - base64 string that contains the local image for further manipulations
- * @return imageData
+ * @param {String} url - base64 string that contains the local image for further manipulations
+ * @return {ImageData} imageData
  */
 function getBimap(url){
     return new Promise(function(enj, rdj){
@@ -154,10 +164,10 @@ function getBimap(url){
  * Processes the image by cropping extra pixels
  *
  *
- * @param img_buffer - Incoming imageData
- * @param border - the color border of the pixel at which it is considered empty
- * @param opacity - color border opacity at which the pixel is considered empty
- * @return Cropping data, height width, start x and y
+ * @param {ImageData} img_buffer - Incoming imageData
+ * @param {Object} border - the color border of the pixel at which it is considered empty
+ * @param {Number} opacity - color border opacity at which the pixel is considered empty
+ * @return {ImageData} Cropping data, height width, start x and y
  */
 function dec_img(img_buffer, border, opacity){
     var max_x = 0,
@@ -203,12 +213,12 @@ function dec_img(img_buffer, border, opacity){
 /**
  * Crop image
  * 
- * @param data - imageData
- * @param dx - The beginning of the cropped image by x
- * @param dy - The beginning of the cropped image by y
- * @param w - Cropped Image Width
- * @param h - Cropped Image Height
- * @return new ImageData
+ * @param {ImageData} data - imageData
+ * @param {Number} dx - The beginning of the cropped image by x
+ * @param {Number} dy - The beginning of the cropped image by y
+ * @param {Number} w - Cropped Image Width
+ * @param {Number} h - Cropped Image Height
+ * @return {ImageData} new ImageData
  */
 function cut(data, dx, dy, w, h){
     try{
@@ -244,10 +254,10 @@ function cut(data, dx, dy, w, h){
 /**
  * Separates image on chuncks
  * 
- * @param data - imageData
- * @param dx - chuncks per x
- * @param dy - chuncks per y
- * @return array image data
+ * @param {ImageData} data - imageData
+ * @param {Number} dx - chuncks per x
+ * @param {Number} dy - chuncks per y
+ * @return {Array} array image data
  */
 function Separate(d, dx, dy){
     var ret = [],
@@ -289,10 +299,31 @@ function getDominantColor(d){
     return colors[0];
 }
 
+
+/**
+ * Draw image async
+ * @param {ImageData} imagedata 
+ * @param {CanvasRenderingContext2D} ctx 
+ * @param {Number} x 
+ * @param {Number} w 
+ * @param {Number} h 
+ */
+function draw_imagedata(imagedata, ctx, x, w, h) {
+    var canvas = document.createElement('canvas');
+    var ctxx = canvas.getContext('2d');
+    canvas.width = imagedata.width;
+    canvas.height = imagedata.height;
+    ctxx.putImageData(imagedata, 0, 0);
+
+    ctx.drawImage(canvas, x, 0, w, h)
+}
+
 function loadDone(){
     var width = 0,
         height = 0,
         max_w = 0,
+        min_w = Infinity,
+        min_h = Infinity,
         max_h = 0;
 
     for(var i = 0;i < buffer.length;i++){
@@ -308,14 +339,35 @@ function loadDone(){
     cnavs.width = max_w * buffer.length;
     cnavs.height = height;
 
-    ctx.fillStyle = inputs[6].checked ? getMax().hex : W_FILL_COLOR;
-    ctx.fillRect(0, 0, cnavs.width,cnavs.height);
+    if(cancel_frame){
+        for(var i = 0;i < buffer.length;i++){
+            if(buffer[i].height < min_h){
+                height = buffer[i].height;
+                min_h = buffer[i].height;
+            }
+
+            if(buffer[i].width < min_h){
+                min_w = buffer[i].width;
+            }
+        }
+        
+        cnavs.width = min_w * buffer.length;
+        cnavs.height = height;
+    }
+
+    if(!transparent_bg){
+        ctx.fillStyle = inputs[6].checked ? getMax().hex : W_FILL_COLOR;
+        ctx.fillRect(0, 0, cnavs.width,cnavs.height);
+    }
 
     for(var i = 0;i < buffer.length;i++)
-        ctx.putImageData(
-            buffer[i],
-            max_w * i,
-            0);
+        if(!cancel_frame)
+            ctx.putImageData(
+                buffer[i],
+                max_w * i,
+                0);
+        else
+            draw_imagedata(buffer[i], ctx, min_w * i, min_w, min_h)
     
     doned.src = cnavs.toDataURL();
     doned.style.height = cnavs.height + "px";
@@ -326,8 +378,8 @@ function loadDone(){
 files.oninput = function(){
     download.style.display = "none";
     var start = Date.now(),
-         fls = files.files,
-         reader  = new FileReader();
+        fls = files.files,
+        reader  = new FileReader();
     
     var data = null;
     var cut_i = null;
@@ -351,7 +403,6 @@ files.oninput = function(){
                     color_buffer[hex].summ++;
                 }
 
-                console.log(v_color);
             }else{
                 v_color = W_BORDER;
             }
